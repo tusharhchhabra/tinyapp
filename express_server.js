@@ -12,7 +12,7 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-const usersDatabase = {};
+const users = {};
 
 
 app.get("/", (req, res) => {
@@ -21,21 +21,56 @@ app.get("/", (req, res) => {
 
 
 // Authentication
-app.post("/login", (req, res) => {
-  const username = req.body.username;
-  if (username) {
-    res.cookie("username", username);
+app.get("/register", (req, res) => {
+  const templateVars = {
+    user: findUser(req.cookies["user_id"])
+  };
+  res.render("register", templateVars);
+});
+
+app.post("/register", (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res
+      .status(400)
+      .send("400 - Please enter a valid email and password.");
+  } else {
+    if (userExists(email)) {
+      return res
+        .status(400)
+        .send("400 - This email is already registered.");
+    }
+    const id = generateRandomString();
+    users[id] = { id, email, password };
+    res.cookie("user_id", id);
     res.redirect("/urls");
+  }
+});
+
+app.post("/login", (req, res) => {
+  const email = req.body.email;
+  const existingUserId = findUserId(email);
+
+  if (!email) {
+    res
+      .status(400)
+      .send("403 - Please enter a valid email.");
+  } else if (!existingUserId) {
+    res
+      .status(400)
+      .send("400 - This email is not registered.");
   } else {
     res
-      .status(403)
-      .send("403 - Please enter a valid username");
+      .cookie("user_id", existingUserId)
+      .redirect("/urls");
   }
 });
 
 app.post("/logout", (req, res) => {
-    res.clearCookie("username");
-    res.redirect("/urls");
+  res
+    .clearCookie("user_id")
+    .redirect("/urls");
 });
 
 
@@ -43,7 +78,7 @@ app.post("/logout", (req, res) => {
 // Read urls
 app.get("/urls", (req, res) => {
   const templateVars = {
-    username: req.cookies["username"],
+    user: findUser(req.cookies["user_id"]),
     urls: urlDatabase
   };
   res.render("urls_index", templateVars);
@@ -52,18 +87,18 @@ app.get("/urls", (req, res) => {
 // Create new url
 app.get("/urls/new", (req, res) => {
   const templateVars = {
-    username: req.cookies["username"]
-  }
+    user: findUser(req.cookies["user_id"])
+  };
   res.render("urls_new", templateVars);
 });
 
 // Edit url
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
-  const templateVars = { 
-    username: req.cookies["username"],
-    id: id, 
-    longURL: urlDatabase[id] 
+  const templateVars = {
+    user: findUser(req.cookies["user_id"]),
+    id: id,
+    longURL: urlDatabase[id]
   };
   res.render("urls_show", templateVars);
 });
@@ -103,6 +138,35 @@ app.get("/u/:id", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
+
+
+// Find user
+function findUser(userId) {
+  for (const id in users) {
+    if (id === userId) {
+      return users[id];
+    }
+  }
+}
+
+function userExists(email) {
+  for (const userId in users) {
+    if (users[userId].email === email) {
+      console.log("existing user found.");
+      return true;
+    }
+  }
+}
+
+function findUserId(email) {
+  for (const id in users) {
+    if (users[id].email === email) {
+      console.log("existing user found.");
+      return id;
+    }
+  }
+}
 
 
 
