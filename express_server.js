@@ -10,12 +10,28 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const usersDatabase = {};
+
 app.get("/", (req, res) => {
   res.redirect("/urls");
 });
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
+});
+
+
+// Authentication
+app.post("/login", (req, res) => {
+  const username = req.body.username;
+  if (username) {
+    res.cookie("username", username);
+    res.redirect("/urls");
+  } else {
+    res
+      .status(403)
+      .send("403 - Please enter a valid username");
+  }
 });
 
 
@@ -27,7 +43,7 @@ app.get("/urls", (req, res) => {
 
 app.post("/urls", (req, res) => {
   const longURL = req.body["longURL"];
-  const shortURL = generateRandomString()
+  const shortURL = generateRandomString();
   urlDatabase[shortURL] = longURL;
   const templateVars = { id: shortURL, longURL: urlDatabase[shortURL] };
   res.redirect(`/urls/${shortURL}`);
@@ -75,11 +91,11 @@ app.listen(PORT, () => {
 function generateRandomString() {
   const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
-  
+
   for (let i = 0; i < 6; i++) {
     const randomIndex = Math.floor(Math.random() * charset.length);
     result += charset[randomIndex];
   }
-  
+
   return result;
 }
