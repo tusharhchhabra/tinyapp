@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "acp": "./add-commit-push.sh"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -17,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/tusharhchhabra/tinyapp/issues"
   },
-  "homepage": "https://github.com/tusharhchhabra/tinyapp#readme"
+  "homepage": "https://github.com/tusharhchhabra/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
 }
