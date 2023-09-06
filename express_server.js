@@ -11,7 +11,7 @@ const urlDatabase = {
 };
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.redirect("/urls");
 });
 
 app.get("/urls.json", (req, res) => {
@@ -45,6 +45,14 @@ app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
   const templateVars = { id: id, longURL: urlDatabase[id] };
   res.render("urls_show", templateVars);
+});
+
+app.post("/urls/:id", (req, res) => {
+  const id = req.params.id;
+  const longURL = req.body.longURL;
+  urlDatabase[id] = longURL;
+  const templateVars = { id: id, longURL: urlDatabase[id] };
+  res.redirect(`/urls`);
 });
 
 app.post("/urls/:id/delete", (req, res) => {
