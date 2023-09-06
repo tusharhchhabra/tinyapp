@@ -29,8 +29,8 @@ app.post("/urls", (req, res) => {
   const longURL = req.body["longURL"];
   const shortURL = generateRandomString()
   urlDatabase[shortURL] = longURL;
-  const templateVars = { urls: urlDatabase };
-  res.render("urls_index", templateVars);
+  const templateVars = { id: shortURL, longURL: urlDatabase[shortURL] };
+  res.redirect(`/urls/${shortURL}`);
 });
 
 
