@@ -23,7 +23,7 @@ app.get("/", (req, res) => {
 // Authentication
 app.get("/register", (req, res) => {
   const templateVars = {
-    user: findUser(req.cookies["user_id"])
+    user: findUserById(req.cookies["user_id"])
   };
   res.render("register", templateVars);
 });
@@ -51,14 +51,14 @@ app.post("/register", (req, res) => {
 
 app.get("/login", (req, res) => {
   const templateVars = {
-    user: findUser(req.cookies["user_id"])
+    user: findUserById(req.cookies["user_id"])
   };
   res.render("login", templateVars);
 });
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
-  const existingUser = findUser(email, password);
+  const existingUser = findUserByCredentials(email, password);
 
   if (!email || !password) {
     return res
@@ -95,7 +95,7 @@ app.get("/urls", (req, res) => {
 // Create new url
 app.get("/urls/new", (req, res) => {
   const templateVars = {
-    user: findUser(req.cookies["user_id"])
+    user: findUserById(req.cookies["user_id"])
   };
   res.render("urls_new", templateVars);
 });
@@ -104,7 +104,7 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
   const templateVars = {
-    user: findUser(req.cookies["user_id"]),
+    user: findUserById(req.cookies["user_id"]),
     id: id,
     longURL: urlDatabase[id]
   };
@@ -167,7 +167,7 @@ function userExists(email) {
   }
 }
 
-function findUser(email, password) {
+function findUserByCredentials(email, password) {
   for (const id in users) {
     if (users[id].email === email && users[id].password === password) {
       console.log("existing user found.");
