@@ -7,21 +7,25 @@ app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
-};
+const urlDatabase = {};
 
 const users = {};
 
 
 app.get("/", (req, res) => {
-  res.redirect("/urls");
+  if (req.cookies["user_id"]) {
+    res.redirect("/urls");
+  } else {
+    res.redirect("login");
+  }
 });
 
 
 // Authentication
 app.get("/register", (req, res) => {
+  if (req.cookies["user_id"]) {
+    return res.redirect("/urls");
+  }
   const templateVars = {
     user: findUserById(req.cookies["user_id"])
   };
@@ -35,21 +39,24 @@ app.post("/register", (req, res) => {
     return res
       .status(400)
       .send("400 - Please enter a valid email and password.");
-  } else {
-    if (userExists(email)) {
-      return res
-        .status(400)
-        .send("400 - This email is already registered.");
-    }
-    const id = generateRandomString();
-    users[id] = { id, email, password };
-    res.cookie("user_id", id);
-    res.redirect("/urls");
   }
+  if (userExists(email)) {
+    return res
+      .status(400)
+      .send("400 - This email is already registered.");
+  }
+  const id = generateRandomString();
+  users[id] = { id, email, password };
+  res
+    .cookie("user_id", id)
+    .redirect("/urls");
 });
 
 
 app.get("/login", (req, res) => {
+  if (req.cookies["user_id"]) {
+    return res.redirect("/urls");
+  }
   const templateVars = {
     user: findUserById(req.cookies["user_id"])
   };
@@ -59,7 +66,7 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
   const existingUser = findUserByEmail(email);
-  const isPasswordValid = existingUser && existingUser.password === password
+  const isPasswordValid = existingUser && existingUser.password === password;
 
   if (!email || !password) {
     return res
@@ -88,61 +95,143 @@ app.post("/logout", (req, res) => {
 
 
 
-// Read urls
+// Urls list
 app.get("/urls", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    return res
+      .status(401)
+      .send("401 - Please log in or register to access saved short URLs.");
+  }
+
+  const userId = req.cookies["user_id"];
   const templateVars = {
-    user: findUserById(req.cookies["user_id"]),
-    urls: urlDatabase
+    user: findUserById(userId),
+    urls: urlsForUser(userId)
   };
   res.render("urls_index", templateVars);
 });
 
-// Create new url
+
+// New url page
 app.get("/urls/new", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    return res.redirect("/login");
+  }
+
   const templateVars = {
     user: findUserById(req.cookies["user_id"])
   };
   res.render("urls_new", templateVars);
 });
 
-// Edit url
+
+// Delete url
+app.post("/urls/:id/delete", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    return res
+      .status(401)
+      .send("401 - Please log in to delete short URLs");
+  }
+
+  const urlId = req.params.id;
+  const userId = req.cookies["user_id"];
+  if (!urlDatabase[urlId]) {
+    return res
+      .status(400)
+      .send("400 - The requested short URL does not exist.");
+  } else if (urlDatabase[urlId].userId !== userId) {
+    return res
+      .status(401)
+      .send("401 - You can only delete URLs created using your currently logged in account.");
+  }
+
+  delete urlDatabase[urlId];
+  console.log(urlDatabase);
+  res.redirect("/urls");
+});
+
+
+// Edit url page
 app.get("/urls/:id", (req, res) => {
-  const id = req.params.id;
+  if (!req.cookies["user_id"]) {
+    return res
+      .status(401)
+      .send("401 - Please log in to edit URLs");
+  }
+
+  const urlId = req.params.id;
+  const userId = req.cookies["user_id"];
+  if (!urlDatabase[urlId]) {
+    return res
+      .status(400)
+      .send("400 - The requested short URL does not exist.");
+  } else if (urlDatabase[urlId].userId !== userId) {
+    return res
+      .status(401)
+      .send("401 - You can only edit URLs created using your currently logged in account.");
+  }
+
   const templateVars = {
-    user: findUserById(req.cookies["user_id"]),
-    id: id,
-    longURL: urlDatabase[id]
+    user: findUserById(userId),
+    id: urlId,
+    longURL: urlDatabase[urlId].longURL
   };
   res.render("urls_show", templateVars);
 });
 
+
 // Save edited urls
 app.post("/urls/:id", (req, res) => {
-  const id = req.params.id;
+  if (!req.cookies["user_id"]) {
+    return res
+      .status(401)
+      .send("401 - Please log in to edit URLs");
+  }
+
+  const userId = req.cookies["user_id"];
+  const urlId = req.params.id;
   const longURL = req.body.longURL;
-  urlDatabase[id] = longURL;
+  if (!urlDatabase[urlId]) {
+    return res
+      .status(400)
+      .send("400 - The requested short URL does not exist.");
+  } else if (urlDatabase[urlId].userId !== userId) {
+    return res
+      .status(401)
+      .send("401 - You can only edit URLs created using your currently logged in account.");
+  }
+  urlDatabase[urlId].longURL = longURL;
+  console.log(urlDatabase);
   res.redirect(`/urls`);
 });
 
-// Return to urls after creating new url
+
+// Return to urls list upon creating
 app.post("/urls", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    return res
+      .status(401)
+      .send("401 - Please log in to create short URLs");
+  }
+
   const longURL = req.body["longURL"];
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = longURL;
+  const userId = req.cookies["user_id"];
+  urlDatabase[shortURL] = { longURL, userId };
   res.redirect(`/urls/${shortURL}`);
 });
 
-// Delete url
-app.post("/urls/:id/delete", (req, res) => {
-  const id = req.params.id;
-  delete urlDatabase[id];
-  res.redirect("/urls");
-});
 
 // Open long url
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
-  res.redirect(urlDatabase[id]);
+
+  if (!Object.keys(urlDatabase).includes(id)) {
+    return res
+      .status(400)
+      .send("400 - The requested short URL does not exist.");
+  }
+  res.redirect(urlDatabase[id].longURL);
 });
 
 
@@ -178,6 +267,16 @@ function findUserByEmail(email) {
       return users[id];
     }
   }
+}
+
+function urlsForUser(userId) {
+  const urlsForUser = {};
+  for (const urlId in urlDatabase) {
+    if (urlDatabase[urlId].userId === userId) {
+      urlsForUser[urlId] = urlDatabase[urlId];
+    }
+  }
+  return urlsForUser;
 }
 
 
