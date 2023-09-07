@@ -58,7 +58,8 @@ app.get("/login", (req, res) => {
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
-  const existingUser = findUserByCredentials(email, password);
+  const existingUser = findUserByEmail(email);
+  const isPasswordValid = existingUser && existingUser.password === password
 
   if (!email || !password) {
     return res
@@ -67,8 +68,12 @@ app.post("/login", (req, res) => {
   } else {
     if (!existingUser) {
       return res
-        .status(400)
-        .send("400 - Invalid email or password.");
+        .status(403)
+        .send("403 - Could not find an account with this email.");
+    } else if (!isPasswordValid) {
+      return res
+        .status(403)
+        .send("403 - Invalid password.");
     }
     res.cookie("user_id", existingUser.id);
     res.redirect("/urls");
@@ -78,7 +83,7 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
   res
     .clearCookie("user_id")
-    .redirect("/urls");
+    .redirect("login");
 });
 
 
@@ -161,15 +166,14 @@ function findUserById(userId) {
 function userExists(email) {
   for (const userId in users) {
     if (users[userId].email === email) {
-      console.log("existing user found.");
       return true;
     }
   }
 }
 
-function findUserByCredentials(email, password) {
+function findUserByEmail(email) {
   for (const id in users) {
-    if (users[id].email === email && users[id].password === password) {
+    if (users[id].email === email) {
       console.log("existing user found.");
       return users[id];
     }
