@@ -26,16 +26,9 @@
         </div>
       </form>
     <% } else { %>
-      <form class="form-inline" action="/login" method="POST">
+      <form class="form-inline" action="/login" method="GET">
         <div class="form-group mb-2">
-          <input
-            class="form-control"
-            type="email"
-            name="email"
-            placeholder="Email"
-            style="width: 300px; margin: 1em"
-          />
-          <button type="submit" class="btn btn-outline-light">Log in</button>
+          <button type="submit" class="btn btn-outline-light">Login</button>
         </div>
       </form>
       <form class="form-inline" action="/register" method="GET" style="margin-left: 10px">

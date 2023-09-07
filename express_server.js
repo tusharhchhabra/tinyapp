@@ -48,22 +48,30 @@ app.post("/register", (req, res) => {
   }
 });
 
-app.post("/login", (req, res) => {
-  const email = req.body.email;
-  const existingUserId = findUserId(email);
 
-  if (!email) {
-    res
+app.get("/login", (req, res) => {
+  const templateVars = {
+    user: findUser(req.cookies["user_id"])
+  };
+  res.render("login", templateVars);
+});
+
+app.post("/login", (req, res) => {
+  const { email, password } = req.body;
+  const existingUser = findUser(email, password);
+
+  if (!email || !password) {
+    return res
       .status(400)
-      .send("403 - Please enter a valid email.");
-  } else if (!existingUserId) {
-    res
-      .status(400)
-      .send("400 - This email is not registered.");
+      .send("400 - Please enter a valid email and password.");
   } else {
-    res
-      .cookie("user_id", existingUserId)
-      .redirect("/urls");
+    if (!existingUser) {
+      return res
+        .status(400)
+        .send("400 - Invalid email or password.");
+    }
+    res.cookie("user_id", existingUser.id);
+    res.redirect("/urls");
   }
 });
 
@@ -78,7 +86,7 @@ app.post("/logout", (req, res) => {
 // Read urls
 app.get("/urls", (req, res) => {
   const templateVars = {
-    user: findUser(req.cookies["user_id"]),
+    user: findUserById(req.cookies["user_id"]),
     urls: urlDatabase
   };
   res.render("urls_index", templateVars);
@@ -142,7 +150,7 @@ app.listen(PORT, () => {
 
 
 // Find user
-function findUser(userId) {
+function findUserById(userId) {
   for (const id in users) {
     if (id === userId) {
       return users[id];
@@ -159,11 +167,11 @@ function userExists(email) {
   }
 }
 
-function findUserId(email) {
+function findUser(email, password) {
   for (const id in users) {
-    if (users[id].email === email) {
+    if (users[id].email === email && users[id].password === password) {
       console.log("existing user found.");
-      return id;
+      return users[id];
     }
   }
 }
