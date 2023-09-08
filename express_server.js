@@ -1,4 +1,5 @@
 const express = require("express");
+const methodOverride = require('method-override');
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
 const {
@@ -13,6 +14,7 @@ const PORT = 8080;
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
+app.use(methodOverride('_method'));
 app.use(cookieSession({
   name: 'session',
   keys: ["6vIZ4LBoxgBEl7WI", "udbos1kxog4AEub4"], // Hardcoding keys here for project evaluation (to be avoided in production)
@@ -146,7 +148,7 @@ app.get("/urls/new", (req, res) => {
 
 
 // DELETE URL
-app.post("/urls/:id/delete", (req, res) => {
+app.delete("/urls/:id/delete", (req, res) => {
   if (!req.session.user_id) {
     return res
       .status(401)
@@ -200,7 +202,7 @@ app.get("/urls/:id", (req, res) => {
 
 
 // EDIT URL POST
-app.post("/urls/:id", (req, res) => {
+app.put("/urls/:id", (req, res) => {
   if (!req.session.user_id) {
     return res
       .status(401)
@@ -266,6 +268,7 @@ app.get("/u/:id", (req, res) => {
 
   res.redirect(urlDatabase[id].longURL);
 });
+
 
 
 // Start listening
