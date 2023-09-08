@@ -9,7 +9,7 @@ const {
 } = require("./helpers");
 
 const app = express();
-const PORT = 8080; // default port 8080
+const PORT = 8080;
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
@@ -51,13 +51,13 @@ app.post("/register", (req, res) => {
   if (!email || !password) {
     return res
       .status(400)
-      .send("Error 400 - Please enter a valid email and password.");
+      .send("<h2>Error 400 - Please enter a valid email and password.</h2>");
   }
 
   if (getUserByEmail(email, users)) {
     return res
       .status(400)
-      .send("Error 400 - This email is already registered.");
+      .send("<h2>Error 400 - This email is already registered.</h2>");
   }
 
   const hashedPassword = bcrypt.hashSync(password, 10);
@@ -90,16 +90,16 @@ app.post("/login", (req, res) => {
   if (!email || !password) {
     return res
       .status(400)
-      .send("Error 400 - Please enter a valid email and password.");
+      .send("<h2>Error 400 - Please enter a valid email and password.</h2>");
   } else {
     if (!existingUser) {
       return res
         .status(403)
-        .send("Error 403 - Could not find an account with this email.");
+        .send("<h2>Error 403 - Could not find an account with this email.</h2>");
     } else if (!isPasswordValid) {
       return res
         .status(403)
-        .send("Error 403 - Invalid password.");
+        .send("<h2>Error 403 - Invalid password.</h2>");
     }
     req.session.user_id = existingUser.id;
     res.redirect("/urls");
@@ -120,7 +120,7 @@ app.get("/urls", (req, res) => {
   if (!req.session.user_id) {
     return res
       .status(401)
-      .send("Error 401 - Please log in or register to access saved short URLs.");
+      .send("<h2>Error 401 - Please log in or register to access saved short URLs.</h2>");
   }
 
   const userId = req.session.user_id;
@@ -150,7 +150,7 @@ app.post("/urls/:id/delete", (req, res) => {
   if (!req.session.user_id) {
     return res
       .status(401)
-      .send("Error 401 - Please log in to delete short URLs");
+      .send("<h2>Error 401 - Please log in to delete short URLs</h2>");
   }
 
   const urlId = req.params.id;
@@ -158,11 +158,11 @@ app.post("/urls/:id/delete", (req, res) => {
   if (!urlDatabase[urlId]) {
     return res
       .status(400)
-      .send("Error 400 - The requested short URL does not exist.");
+      .send("<h2>Error 400 - The requested short URL does not exist.</h2>");
   } else if (urlDatabase[urlId].userId !== userId) {
     return res
       .status(401)
-      .send("Error 401 - You can only delete URLs created using your currently logged in account.");
+      .send("<h2>Error 401 - You can only delete URLs created using your currently logged in account.</h2>");
   }
 
   delete urlDatabase[urlId];
@@ -175,7 +175,7 @@ app.get("/urls/:id", (req, res) => {
   if (!req.session.user_id) {
     return res
       .status(401)
-      .send("401 - Please log in to edit URLs");
+      .send("<h2>401 - Please log in to edit URLs</h2>");
   }
 
   const urlId = req.params.id;
@@ -183,11 +183,11 @@ app.get("/urls/:id", (req, res) => {
   if (!urlDatabase[urlId]) {
     return res
       .status(400)
-      .send("Error 400 - The requested short URL does not exist.");
+      .send("<h2>Error 400 - The requested short URL does not exist.</h2>");
   } else if (urlDatabase[urlId].userId !== userId) {
     return res
       .status(401)
-      .send("Error 401 - You can only edit URLs created using your currently logged in account.");
+      .send("<h2>Error 401 - You can only edit URLs created using your currently logged in account.</h2>");
   }
 
   const templateVars = {
@@ -204,21 +204,29 @@ app.post("/urls/:id", (req, res) => {
   if (!req.session.user_id) {
     return res
       .status(401)
-      .send("Error 401 - Please log in to edit URLs");
+      .send("<h2>Error 401 - Please log in to edit URLs</h2>");
   }
 
   const userId = req.session.user_id;
   const urlId = req.params.id;
   const longURL = req.body.longURL;
+
+  if (!longURL) {
+    return res
+      .status(400)
+      .send("<h2>Error 400 - The URL field cannot be empty.</h2>");
+  }
   if (!urlDatabase[urlId]) {
     return res
       .status(400)
-      .send("Error 400 - The requested short URL does not exist.");
-  } else if (urlDatabase[urlId].userId !== userId) {
+      .send("<h2>Error 400 - The requested short URL does not exist.</h2>");
+  }
+  if (urlDatabase[urlId].userId !== userId) {
     return res
       .status(401)
-      .send("Error 401 - You can only edit URLs created using your currently logged in account.");
+      .send("<h2>Error 401 - You can only edit URLs created using your currently logged in account.</h2>");
   }
+
   urlDatabase[urlId].longURL = longURL;
   res.redirect(`/urls`);
 });
@@ -229,10 +237,16 @@ app.post("/urls", (req, res) => {
   if (!req.session.user_id) {
     return res
       .status(401)
-      .send("Error 401 - Please log in to create short URLs");
+      .send("<h2>Error 401 - Please log in to create short URLs</h2>");
   }
 
-  const longURL = req.body["longURL"];
+  const longURL = req.body.longURL;
+  if (!longURL) {
+    return res
+      .status(400)
+      .send("<h2>Error 400 - The URL field cannot be empty.</h2>");
+  }
+
   const shortURL = generateRandomString();
   const userId = req.session.user_id;
   urlDatabase[shortURL] = { longURL, userId };
@@ -247,7 +261,7 @@ app.get("/u/:id", (req, res) => {
   if (!urlDatabase[id]) {
     return res
       .status(400)
-      .send("Error 400 - The requested short URL does not exist.");
+      .send("<h2>Error 400 - The requested short URL does not exist.</h2>");
   }
 
   res.redirect(urlDatabase[id].longURL);
