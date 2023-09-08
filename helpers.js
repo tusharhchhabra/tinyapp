@@ -10,7 +10,6 @@ function findUserById(userId, users) {
 function getUserByEmail(email, users) {
   for (const id in users) {
     if (users[id].email === email) {
-      console.log("existing user found.");
       return users[id];
     }
   }
@@ -27,14 +26,6 @@ function getUrlsForUser(userId, urls) {
 }
 
 
-// Create user
-function createUser(id, email, password) {
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  return { id, email, password: hashedPassword };
-}
-
-
-
 // Generate random string
 function generateRandomString() {
   const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -49,4 +40,9 @@ function generateRandomString() {
 }
 
 
-module.exports = { createUser, findUserById, getUserByEmail, getUrlsForUser, generateRandomString }
+module.exports = {
+  findUserById,
+  getUserByEmail,
+  getUrlsForUser,
+  generateRandomString
+};
